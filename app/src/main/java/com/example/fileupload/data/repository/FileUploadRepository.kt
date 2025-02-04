@@ -1,11 +1,13 @@
 package com.example.fileupload.data.repository
 
-import android.net.Uri
+import com.example.fileupload.data.dto.UploadFileDto
+import com.example.fileupload.data.dto.UploadFileStatus
 import com.example.fileupload.data.remote.FileUploadApi
-import io.ktor.client.content.ProgressListener
+import kotlinx.coroutines.flow.Flow
 
 class FileUploadRepository(private val fileUploadApi: FileUploadApi) {
-    suspend fun uploadSingleImage(uri: Uri, listener: ProgressListener) {
-        fileUploadApi.uploadSingleImage(uri, listener)
+
+    fun uploadSingleImage(uploadFile: UploadFileDto) : Flow<UploadFileStatus>{
+        return fileUploadApi.uploadSingleImage(uploadFile)
     }
 }

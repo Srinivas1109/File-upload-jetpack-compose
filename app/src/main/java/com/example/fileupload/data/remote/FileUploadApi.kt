@@ -1,8 +1,9 @@
 package com.example.fileupload.data.remote
 
 import android.content.Context
-import android.net.Uri
 import android.util.Log
+import com.example.fileupload.data.dto.UploadFileDto
+import com.example.fileupload.data.dto.UploadFileStatus
 import io.ktor.client.HttpClient
 import io.ktor.client.content.ProgressListener
 import io.ktor.client.plugins.onUpload
@@ -12,46 +13,61 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
-import java.util.UUID
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
 
 class FileUploadApi(private val client: HttpClient, private val context: Context) {
 
-    data class FileUploadProgress(
-        val progress: Int,
-        val uri: Uri,
-        val total: Int,
-        val name: String
-    )
-
-    suspend fun uploadSingleImage(uri: Uri, listener: ProgressListener) {
+    fun uploadSingleImage(uploadFile: UploadFileDto): Flow<UploadFileStatus> = channelFlow {
         try {
 
-//            val filePath = uri.path ?: throw IllegalArgumentException("Invalid file path")
-//            val file = File(filePath)
-//            require(file.exists()) { "File not found: $filePath" }
-            val fileName = UUID.randomUUID().toString()
-            val bytes = context.contentResolver.openInputStream(uri)?.readBytes() ?: return
+            val bytes = context.contentResolver.openInputStream(uploadFile.uri)?.readBytes()
+                ?: byteArrayOf()
 
-            val content = MultiPartFormDataContent(formData {
-                append("description", "user uploaded image")
-                append(
-                    "file",
-                    bytes,
-                    Headers.build {
-                        append(HttpHeaders.ContentType, "image/png")
-                        append(
-                            HttpHeaders.ContentDisposition,
-                            "filename=\"${fileName}.png\""
-                        )
-                    })
-            })
+            val content = MultiPartFormDataContent(
+                formData {
+                    append("description", "user uploaded image")
+                    append(
+                        "file",
+                        bytes,
+                        Headers.build {
+                            append(HttpHeaders.ContentType, "image/png")
+                            append(
+                                HttpHeaders.ContentDisposition,
+                                "filename=\"temp.png\""
+                            )
+                        })
+                },
+            )
 
             val response = client.post("https://tmpfiles.org/api/v1/upload") {
                 setBody(content)
-                onUpload(listener)
+                onUpload(
+                    object : ProgressListener {
+                        override suspend fun onProgress(
+                            bytesSentTotal: Long,
+                            contentLength: Long?
+                        ) {
+//                            contentLength?.let {
+//                                Log.d("UPLOADING_STATUS", "${uploadFile.id}: ${(bytesSentTotal / contentLength) * 100f}%")
+//                            }
+                            trySend(
+                                UploadFileStatus(
+                                    id = uploadFile.id,
+                                    filename = uploadFile.filename,
+                                    totalBytes = contentLength ?: 0L,
+                                    totalBytesUploaded = bytesSentTotal
+                                )
+                            )
+                        }
+                    }
+                )
             }
 
-            Log.d("UploadSingleImage", "Status: ${response.status}, Name: $fileName.png")
+            Log.d(
+                "UploadSingleImage",
+                "Status: ${response.status}, Name: ${uploadFile.filename}.png, Id: ${uploadFile.id}"
+            )
         } catch (e: Exception) {
             e.printStackTrace()
         }

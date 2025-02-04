@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -31,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.fileupload.utils.Constants.MAXIMUM_FILES_TO_UPLOAD
 import org.koin.androidx.compose.koinViewModel
@@ -66,7 +69,7 @@ fun HomeScreen(modifier: Modifier = Modifier, homeViewModel: HomeViewModel = koi
         ) { uri ->
             if (uri != null) {
                 Log.d("PhotoPicker", "Selected Uri: $uri")
-//                homeViewModel.uploadSingleImage(uri)
+                homeViewModel.uploadSingleImage(uri)
             } else {
                 Log.d("PhotoPicker", "No media selected")
             }
@@ -96,6 +99,20 @@ fun HomeScreen(modifier: Modifier = Modifier, homeViewModel: HomeViewModel = koi
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+
+            uiState.progressMap.entries.forEach {
+                Text(
+                    text = "${it.value.id}: ${((it.value.totalBytesUploaded / it.value.totalBytes.toFloat()) * 100).toInt()}",
+                    modifier = Modifier.fillMaxWidth(), fontSize = 12.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+
+            Text(
+                text = "Progress ${uiState.progress.toInt()}%",
+                modifier = Modifier.fillMaxWidth(), fontSize = 12.sp
+            )
+            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
