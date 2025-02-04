@@ -51,7 +51,7 @@ class HomeViewModel(
 
     fun uploadFile(uri: Uri) {
         viewModelScope.launch(context = Dispatchers.IO) {
-            fileUploadRepository.uploadFile(uri)
+            job = fileUploadRepository.uploadFile(uri)
                 .onStart {
                     _uiState.update {
                         it.copy(progress = 0f, isUploading = true)
