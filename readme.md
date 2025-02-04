@@ -39,6 +39,8 @@ cd File-upload-jetpack-compose
 - Jetpack Compose - Modern UI Toolkit
 - StateFlow - Reactive state management
 - Coroutines - Asynchronous programming
+- Koin - Dependency Injection
+- Ktor-Client - Client side networking
 - Kotlin - Primary language
 - MVVM Architecture - Clean and scalable design
 
