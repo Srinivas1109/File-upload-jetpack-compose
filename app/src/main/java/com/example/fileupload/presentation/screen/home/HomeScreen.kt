@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,22 +30,42 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.fileupload.domain.model.MultipleFilesUploadStatus
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
 fun FileUploadProgress(
     modifier: Modifier = Modifier,
     progress: Float = 0f,
+    uploadingMultipleFiles: Boolean = false,
+    multipleFilesUploadStatus: MultipleFilesUploadStatus? = null
 ) {
     val animatedValue by animateFloatAsState(progress)
+    val multipleFileAnimatedValue by animateIntAsState(
+        targetValue = multipleFilesUploadStatus?.noOfFilesUploaded ?: 0
+    )
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            LinearProgressIndicator(progress = { animatedValue }, modifier = modifier.weight(1f))
-            Spacer(modifier = modifier.width(16.dp))
-            Text(text = "${(animatedValue * 100).toInt()}%")
+            if (uploadingMultipleFiles) {
+                multipleFilesUploadStatus?.let {
+                    LinearProgressIndicator(
+                        progress = { it.noOfFilesUploaded / it.totalFiles.toFloat() },
+                        modifier = modifier.weight(1f)
+                    )
+                    Spacer(modifier = modifier.width(16.dp))
+                    Text(text = "$multipleFileAnimatedValue/${it.totalFiles}")
+                }
+            } else {
+                LinearProgressIndicator(
+                    progress = { animatedValue },
+                    modifier = modifier.weight(1f)
+                )
+                Spacer(modifier = modifier.width(16.dp))
+                Text(text = "${(animatedValue * 100).toInt()}%")
+            }
         }
     }
 }
@@ -72,6 +93,7 @@ fun HomeScreen(modifier: Modifier = Modifier, homeViewModel: HomeViewModel = koi
                     "DocumentPicker",
                     "Number of items selected: ${uris.size}"
                 )
+                homeViewModel.uploadFiles(uris)
             }
         }
 
@@ -99,7 +121,11 @@ fun HomeScreen(modifier: Modifier = Modifier, homeViewModel: HomeViewModel = koi
                 }
             }
 
-            FileUploadProgress(progress = uiState.progress)
+            FileUploadProgress(
+                progress = uiState.progress,
+                uploadingMultipleFiles = uiState.multipleFiles,
+                multipleFilesUploadStatus = uiState.multipleFilesUploadStatus
+            )
 
             Row(
                 modifier = Modifier,
@@ -125,7 +151,7 @@ fun HomeScreen(modifier: Modifier = Modifier, homeViewModel: HomeViewModel = koi
             } else {
                 Button(onClick = {
                     if (uiState.multipleFiles) {
-                        pickMultipleDocuments.launch(arrayOf("*/*"))
+                        pickMultipleDocuments.launch(arrayOf("image/*"))
                     } else {
                         pickDocument.launch(arrayOf("*/*"))
                     }

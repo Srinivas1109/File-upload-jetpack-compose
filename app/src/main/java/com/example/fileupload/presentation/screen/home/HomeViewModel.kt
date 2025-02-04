@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fileupload.data.model.FileInfo
 import com.example.fileupload.domain.model.FileUploadStatus
+import com.example.fileupload.domain.model.MultipleFilesUploadStatus
 import com.example.fileupload.domain.repository.FileManager
 import com.example.fileupload.domain.repository.FileUploadRepository
 import kotlinx.coroutines.CancellationException
@@ -28,7 +29,8 @@ data class HomeUiState(
     val multipleFiles: Boolean = false,
     val errorMessage: String? = null,
     val progress: Float = 0f,
-    val isUploading: Boolean = false
+    val isUploading: Boolean = false,
+    val multipleFilesUploadStatus: MultipleFilesUploadStatus? = null,
 )
 
 class HomeViewModel(
@@ -44,6 +46,8 @@ class HomeViewModel(
     }
 
     private var job: Job? = null
+
+    private var multipleFilesJob: Job? = null
 
     fun uploadFile(uri: Uri) {
         viewModelScope.launch(context = Dispatchers.IO) {
@@ -80,8 +84,35 @@ class HomeViewModel(
         }
     }
 
+    fun uploadFiles(uris: List<Uri>) {
+        viewModelScope.launch(context = Dispatchers.IO) {
+            multipleFilesJob = fileUploadRepository.uploadFiles(uris)
+                .onStart {
+                    _uiState.update { it.copy(isUploading = true, multipleFilesUploadStatus = MultipleFilesUploadStatus(uris.size, 0)) }
+                }.onEach { status ->
+                    _uiState.update { it.copy(multipleFilesUploadStatus = status) }
+                }.onCompletion { cause ->
+                    if (cause == null) {
+                        _uiState.update { it.copy(isUploading = false) }
+                    }
+                    if (cause is CancellationException) {
+                        _uiState.update {
+                            it.copy(isUploading = false)
+                        }
+                    }
+                    if (cause is OutOfMemoryError) {
+                        _uiState.update { it.copy(errorMessage = "Out of memory") }
+                    }
+                }.launchIn(viewModelScope)
+        }
+    }
+
     fun cancelUpload() {
-        job?.cancel()
+        if (uiState.value.multipleFiles) {
+            multipleFilesJob?.cancel()
+        } else {
+            job?.cancel()
+        }
     }
 
 }

@@ -6,3 +6,8 @@ data class FileUploadStatus(
     val totalBytesUploaded: Long,
     val isUploading: Boolean = false,
 )
+
+data class MultipleFilesUploadStatus(
+    val totalFiles: Int,
+    val noOfFilesUploaded: Int,
+)
