@@ -9,6 +9,13 @@ This project is an Android application that allows users to upload files (Images
 - ✅ Cancel ongoing uploads
 - ✅ Uses StateFlow for UI state management
 
+## Screenshots
+<div style="display:flex">
+    <img src="./screenshots/single file.jpeg" width="360" height="760" alt="Single file upload status">
+    <span style="width:16"></span>
+    <img src="./screenshots/Multiple files.jpeg" width="360" height="760" alt="Multiple files upload status">
+</div>
+
 ## 🚀 Getting Started
 1️⃣ Clone the Repository
 ```bash
