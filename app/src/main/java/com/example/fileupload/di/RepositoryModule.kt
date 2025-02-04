@@ -1,15 +1,14 @@
 package com.example.fileupload.di
 
-import com.example.fileupload.data.repository.FileUploadRepository
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.android.Android
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
+import com.example.fileupload.data.repository.FileManagerImpl
+import com.example.fileupload.data.repository.FileUploadRepositoryImpl
+import com.example.fileupload.domain.repository.FileManager
+import com.example.fileupload.domain.repository.FileUploadRepository
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
 
 val repositoryModule = module {
-    singleOf(::FileUploadRepository).bind()
+    singleOf(::FileUploadRepositoryImpl).bind<FileUploadRepository>()
+    singleOf(::FileManagerImpl).bind<FileManager>()
 }

@@ -1,9 +1,9 @@
 package com.example.fileupload.data.remote
 
-import android.content.Context
 import android.util.Log
-import com.example.fileupload.data.dto.UploadFileDto
-import com.example.fileupload.data.dto.UploadFileStatus
+import com.example.fileupload.data.model.FileInfo
+import com.example.fileupload.domain.model.FileUploadStatus
+import com.example.fileupload.domain.repository.FileUploadApi
 import io.ktor.client.HttpClient
 import io.ktor.client.content.ProgressListener
 import io.ktor.client.plugins.onUpload
@@ -16,25 +16,21 @@ import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 
-class FileUploadApi(private val client: HttpClient, private val context: Context) {
+class FileUploadApiImpl(private val client: HttpClient) : FileUploadApi {
 
-    fun uploadSingleImage(uploadFile: UploadFileDto): Flow<UploadFileStatus> = channelFlow {
+    override fun uploadFile(fileInfo: FileInfo): Flow<FileUploadStatus> = channelFlow {
         try {
-
-            val bytes = context.contentResolver.openInputStream(uploadFile.uri)?.readBytes()
-                ?: byteArrayOf()
-
             val content = MultiPartFormDataContent(
                 formData {
-                    append("description", "user uploaded image")
+                    append("description", "user uploaded file")
                     append(
                         "file",
-                        bytes,
+                        fileInfo.bytes,
                         Headers.build {
-                            append(HttpHeaders.ContentType, "image/png")
+                            append(HttpHeaders.ContentType, fileInfo.type)
                             append(
                                 HttpHeaders.ContentDisposition,
-                                "filename=\"temp.png\""
+                                "filename=\"${fileInfo.name}\""
                             )
                         })
                 },
@@ -49,9 +45,8 @@ class FileUploadApi(private val client: HttpClient, private val context: Context
                             contentLength: Long?
                         ) {
                             trySend(
-                                UploadFileStatus(
-                                    id = uploadFile.id,
-                                    filename = uploadFile.filename,
+                                FileUploadStatus(
+                                    filename = fileInfo.name,
                                     totalBytes = contentLength ?: 0L,
                                     totalBytesUploaded = bytesSentTotal
                                 )
@@ -63,7 +58,7 @@ class FileUploadApi(private val client: HttpClient, private val context: Context
 
             Log.d(
                 "UploadSingleImage",
-                "Status: ${response.status}, Name: ${uploadFile.filename}.png, Id: ${uploadFile.id}"
+                "Status: ${response.status}, Name: ${fileInfo.name}"
             )
         } catch (e: Exception) {
             e.printStackTrace()
