@@ -13,5 +13,6 @@ data class UploadFileStatus(
     val id: String = UUID.randomUUID().toString(),
     val filename: String,
     val totalBytes: Long,
-    val totalBytesUploaded: Long
+    val totalBytesUploaded: Long,
+    val isUploading: Boolean = false,
 )

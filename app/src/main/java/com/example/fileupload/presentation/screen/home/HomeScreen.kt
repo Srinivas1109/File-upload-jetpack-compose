@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,14 +16,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -35,8 +46,50 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.fileupload.data.dto.UploadFileStatus
 import com.example.fileupload.utils.Constants.MAXIMUM_FILES_TO_UPLOAD
 import org.koin.androidx.compose.koinViewModel
+import java.util.UUID
+
+@Composable
+fun FileUploadProgress(
+    modifier: Modifier = Modifier,
+    status: UploadFileStatus,
+    cancelUploading: (String) -> Unit
+) {
+    val animatedValue by animateFloatAsState((status.totalBytesUploaded / status.totalBytes.toFloat()))
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            LinearProgressIndicator(progress = { animatedValue }, modifier = modifier.weight(1f))
+            Spacer(modifier = modifier.width(16.dp))
+            Text(text = "${(animatedValue * 100).toInt()}%")
+        }
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = modifier.fillMaxWidth()
+        ) {
+            Text(text = status.filename, fontSize = 12.sp)
+            if (status.isUploading) {
+                IconButton(
+                    onClick = {
+                        cancelUploading(status.id)
+                    },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    modifier = modifier.size(18.dp)
+                ) {
+                    Icon(imageVector = Icons.Filled.Clear, contentDescription = null)
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,20 +152,11 @@ fun HomeScreen(modifier: Modifier = Modifier, homeViewModel: HomeViewModel = koi
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-
-            uiState.progressMap.entries.forEach {
-                Text(
-                    text = "${it.value.id}: ${((it.value.totalBytesUploaded / it.value.totalBytes.toFloat()) * 100).toInt()}",
-                    modifier = Modifier.fillMaxWidth(), fontSize = 12.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
+            uiState.progressMap.entries.forEach { (_, status) ->
+                FileUploadProgress(status = status) {
+                    homeViewModel.cancelUpload(it)
+                }
             }
-
-            Text(
-                text = "Progress ${uiState.progress.toInt()}%",
-                modifier = Modifier.fillMaxWidth(), fontSize = 12.sp
-            )
-            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,

@@ -48,9 +48,6 @@ class FileUploadApi(private val client: HttpClient, private val context: Context
                             bytesSentTotal: Long,
                             contentLength: Long?
                         ) {
-//                            contentLength?.let {
-//                                Log.d("UPLOADING_STATUS", "${uploadFile.id}: ${(bytesSentTotal / contentLength) * 100f}%")
-//                            }
                             trySend(
                                 UploadFileStatus(
                                     id = uploadFile.id,
